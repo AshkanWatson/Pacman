@@ -34,8 +34,10 @@ class AboutScreen extends StatelessWidget {
           '- Sound & music: synthesised from scratch by '
           'tool/generate_audio.dart (no third-party samples).\n'
           '- Gameplay research: "The Pac-Man Dossier" by Jamey Pittman.\n'
-          '- Python, JavaScript and TypeScript names are used for parody; '
-          'no logos are included.\n'
+          '- Character skins: the Python, JavaScript and TypeScript logos, '
+          'redrawn as vector sprites. Python is a trademark of the PSF, '
+          'TypeScript of Microsoft; the JS logo is a community logo. Used '
+          'for non-commercial parody.\n'
           '- Pac-Man is a trademark of Bandai Namco. This is an unaffiliated '
           'fan tribute.',
           style: ArcadeText.body(8),

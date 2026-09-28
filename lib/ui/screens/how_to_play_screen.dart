@@ -62,7 +62,7 @@ class HowToPlayScreen extends StatelessWidget {
               title: 'Power brace',
               text:
                   '50 pts. Adds types: every ghost compiles to TypeScript '
-                  'for a few seconds. TS ghosts are slow, blue and edible: '
+                  'for a few seconds. TS ghosts are slow and edible: '
                   '200, 400, 800, 1600 pts in a row.',
             ),
             _ItemRow(
@@ -131,7 +131,7 @@ class HowToPlayScreen extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    'After a power brace they become TypeScript. When they '
+                    'After a power brace the JS logos flip to TypeScript. When they '
                     'flash, the types are about to wear off!',
                     style: ArcadeText.dim(8),
                   ),

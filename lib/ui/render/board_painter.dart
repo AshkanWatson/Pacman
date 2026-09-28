@@ -197,22 +197,53 @@ class BoardRenderer {
     _centered(canvas, tp, GameEngine.bonusX, GameEngine.bonusY + bob);
   }
 
+  /// Last skin (TypeScript or not) each ghost was drawn with, and the
+  /// engine clock when it changed; drives the JS <-> TS flip animation.
+  final Map<GhostKind, (bool, double)> _skins = {};
+
+  static const double _flipSeconds = 0.3;
+
   void _paintGhosts(Canvas canvas, bool reduceFlashing) {
     final e = engine;
     final wobble = (e.clock * 8).floor().isEven;
     final flashWhite = e.frightFlashWhite && !reduceFlashing;
     for (final g in e.ghosts.reversed) {
       if (e.phase == GamePhase.ghostEaten && g.kind == e.justEaten) continue;
+
+      // Card-flip transition when a ghost changes language: squeeze to a
+      // sliver showing the old logo, then open up showing the new one.
+      final ts = g.frightened;
+      final last = _skins[g.kind];
+      var since = double.infinity;
+      if (last == null || last.$1 != ts) {
+        if (last != null && !g.isEyes && e.clock >= last.$2) {
+          _skins[g.kind] = (ts, e.clock);
+          since = 0;
+        } else {
+          _skins[g.kind] = (ts, double.negativeInfinity);
+        }
+      } else {
+        since = e.clock - last.$2;
+      }
+      var skinTs = ts;
+      var scaleX = 1.0;
+      if (since >= 0 && since < _flipSeconds) {
+        final p = since / _flipSeconds;
+        scaleX = (math.cos(p * math.pi)).abs();
+        if (p < 0.5) skinTs = !ts;
+      }
+
       sprites.drawGhost(
         canvas,
         g.x,
         g.y,
         g.kind,
         g.dir,
-        typescript: g.frightened,
-        flashWhite: g.frightened && flashWhite,
+        typescript: skinTs,
+        flashWhite: skinTs && ts && flashWhite,
         eyesOnly: g.isEyes,
         wobble: wobble,
+        scaleX: scaleX,
       );
     }
   }

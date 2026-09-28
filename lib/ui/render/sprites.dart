@@ -6,49 +6,37 @@ import 'package:flutter/painting.dart';
 import '../../game/core/direction.dart';
 import '../../game/entities/js_ghost.dart';
 import '../theme.dart';
+import 'logos.dart';
 
 /// Vector sprites shared by the game board, the menu attract mode and the
 /// "How to play" screen. All drawing happens in tile units: callers scale
 /// the canvas so one unit equals one maze tile.
+///
+/// Characters wear language logos as skins: Python is the Python logo (with
+/// a chomping mouth cut out of it), ghosts are the JavaScript logo, and
+/// powered-up ghosts become the TypeScript logo. Skins are purely visual:
+/// sizes are fixed per sprite, so collisions never depend on logo shape.
 class SpriteKit {
-  SpriteKit() {
-    _jsLabel = _label('JS', const Color(0xFF111111));
-    _tsLabel = _label('TS', const Color(0xFFFFFFFF));
-    _tsLabelFlash = _label('TS', Palette.tsBlue);
-  }
-
-  late final TextPainter _jsLabel;
-  late final TextPainter _tsLabel;
-  late final TextPainter _tsLabelFlash;
-
   final Paint _fill = Paint()..isAntiAlias = true;
   final Paint _stroke = Paint()
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round
     ..strokeJoin = StrokeJoin.round;
+  final Paint _letter = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.butt
+    ..strokeJoin = StrokeJoin.round
+    ..strokeWidth = Logos.letterWeight;
   final Path _path = Path();
 
+  /// Python's visual radius (the logo fits a 2r x 2r box).
   static const double pythonRadius = 0.8;
-  static const double ghostHalfWidth = 0.78;
 
-  static TextPainter _label(String text, Color color) => TextPainter(
-    text: TextSpan(
-      text: text,
-      style: TextStyle(
-        fontFamily: arcadeFont,
-        fontSize: 0.42,
-        color: color,
-        height: 1,
-      ),
-    ),
-    textDirection: TextDirection.ltr,
-  )..layout();
+  /// Half the side of the JS/TS logo squares.
+  static const double ghostHalfWidth = 0.76;
 
-  void dispose() {
-    _jsLabel.dispose();
-    _tsLabel.dispose();
-    _tsLabelFlash.dispose();
-  }
+  /// Kept for API symmetry; nothing to release (no text painters/images).
+  void dispose() {}
 
   // --------------------------------------------------------------------
   // Python
@@ -56,8 +44,10 @@ class SpriteKit {
 
   /// Draws Python centred at ([cx], [cy]).
   ///
-  /// [mouth] is the half-angle of the open mouth in radians (0..~0.9).
-  /// [dying] (0..1) plays the "Traceback" collapse animation instead.
+  /// [mouth] is the half-angle of the open mouth in radians (0..~0.9); the
+  /// mouth is cut out of the logo in the direction of travel while the logo
+  /// itself stays upright so it is always recognisable.
+  /// [dying] (0..1) plays the arcade-style collapse animation instead.
   void drawPython(
     Canvas canvas,
     double cx,
@@ -69,71 +59,59 @@ class SpriteKit {
   }) {
     canvas.save();
     canvas.translate(cx, cy);
+
+    var facing = switch (dir) {
+      Direction.left => math.pi,
+      Direction.up => -math.pi / 2,
+      Direction.down => math.pi / 2,
+      Direction.right || Direction.none => 0.0,
+    };
     if (dying > 0) {
-      // Face up and open the mouth until Python folds away, like the
-      // arcade death sequence.
-      canvas.rotate(-math.pi / 2);
-      final collapse = (dying / 0.85).clamp(0.0, 1.0);
-      mouth = 0.2 + collapse * (math.pi - 0.2);
+      // Face up and open wider and wider until Python is gone, like the
+      // arcade death sequence, then a small "exception" burst.
+      facing = -math.pi / 2;
       if (dying > 0.85) {
         _drawBurst(canvas, (dying - 0.85) / 0.15, radius);
         canvas.restore();
         return;
       }
-    } else {
-      switch (dir) {
-        case Direction.left:
-          canvas.scale(-1, 1);
-        case Direction.up:
-          canvas.rotate(-math.pi / 2);
-        case Direction.down:
-          canvas.rotate(math.pi / 2);
-        case Direction.right:
-        case Direction.none:
-          break;
-      }
+      final collapse = (dying / 0.85).clamp(0.0, 1.0);
+      mouth = 0.2 + collapse * (math.pi - 0.2);
     }
 
-    final rect = Rect.fromCircle(center: Offset.zero, radius: radius);
-    _path
-      ..reset()
-      ..moveTo(0, 0)
-      ..arcTo(rect, mouth, 2 * math.pi - 2 * mouth, false)
-      ..close();
+    if (mouth > 0.01) {
+      // Clip to a "pie" shape: everything except the mouth wedge.
+      final r = radius * 1.6;
+      _path
+        ..reset()
+        ..moveTo(0, 0)
+        ..arcTo(
+          Rect.fromCircle(center: Offset.zero, radius: r),
+          facing + mouth,
+          2 * math.pi - 2 * mouth,
+          false,
+        )
+        ..close();
+      canvas.clipPath(_path);
+    }
 
-    // Lower half: Python yellow. Upper half: Python blue.
+    canvas.scale(radius * 2);
     _fill
       ..shader = null
-      ..color = Palette.pythonYellow;
-    canvas.drawPath(_path, _fill);
-    canvas.save();
-    canvas.clipRect(Rect.fromLTRB(-radius, -radius, radius, 0));
-    _fill.color = Palette.pythonBlueLight;
-    canvas.drawPath(_path, _fill);
-    canvas.restore();
-
-    // Scale seam, a nod to the interlocking snakes of the logo.
-    _stroke
-      ..color = const Color(0x55000000)
-      ..strokeWidth = 0.06;
-    canvas.drawLine(Offset(-radius * 0.95, 0), Offset(-0.05, 0), _stroke);
-
-    if (dying == 0) {
-      // Eye.
-      final eye = Offset(radius * 0.12, -radius * 0.5);
-      _fill.color = const Color(0xFFFFFFFF);
-      canvas.drawCircle(eye, radius * 0.17, _fill);
-      _fill.color = const Color(0xFF0B1426);
-      canvas.drawCircle(eye.translate(radius * 0.05, 0), radius * 0.09, _fill);
-    }
+      ..color = Logos.pythonBlue;
+    canvas.drawPath(Logos.pythonBlueSnake, _fill);
+    _fill.color = Logos.pythonYellow;
+    canvas.drawPath(Logos.pythonYellowSnake, _fill);
     canvas.restore();
   }
 
   void _drawBurst(Canvas canvas, double t, double radius) {
-    _stroke
-      ..color = Palette.pythonYellow.withValues(alpha: 1 - t)
-      ..strokeWidth = 0.1;
     for (var i = 0; i < 8; i++) {
+      _stroke
+        ..color = (i.isEven ? Logos.pythonBlue : Logos.pythonYellow).withValues(
+          alpha: 1 - t,
+        )
+        ..strokeWidth = 0.1;
       final a = i * math.pi / 4;
       final r0 = radius * (0.3 + t * 0.4);
       final r1 = radius * (0.6 + t * 0.6);
@@ -146,11 +124,15 @@ class SpriteKit {
   }
 
   // --------------------------------------------------------------------
-  // Ghosts
+  // Ghosts: JavaScript logo, TypeScript logo when powered
   // --------------------------------------------------------------------
 
   /// Draws a JavaScript ghost (or its TypeScript form) centred at ([cx],
-  /// [cy]). [wobble] alternates the skirt animation frame.
+  /// [cy]).
+  ///
+  /// [wobble] alternates a two-frame "hover" animation, [scaleX] (0..1)
+  /// squeezes the logo horizontally for the JS <-> TS flip transition, and
+  /// [eyesOnly] draws just the eyes of an eaten ghost heading home.
   void drawGhost(
     Canvas canvas,
     double cx,
@@ -161,94 +143,110 @@ class SpriteKit {
     bool flashWhite = false,
     bool eyesOnly = false,
     bool wobble = false,
+    double scaleX = 1,
   }) {
     canvas.save();
-    canvas.translate(cx, cy);
-    const hw = ghostHalfWidth;
+    canvas.translate(cx, cy + (wobble ? -0.035 : 0.035));
+    if (eyesOnly) {
+      _drawEyes(canvas, dir);
+      canvas.restore();
+      return;
+    }
+    canvas.scale(scaleX.clamp(0.06, 1.0), 1);
 
-    if (!eyesOnly) {
-      final Color body;
-      final TextPainter label;
-      if (typescript) {
-        body = flashWhite ? const Color(0xFFF2F4F8) : Palette.tsBlue;
-        label = flashWhite ? _tsLabelFlash : _tsLabel;
-      } else {
-        body = Color(kind.color);
-        label = _jsLabel;
-      }
-      _buildGhostBody(hw, wobble);
-      _fill
-        ..shader = null
-        ..color = body;
-      canvas.drawPath(_path, _fill);
-      // Logo-style label in the bottom-right corner, like the JS/TS logos.
-      label.paint(canvas, Offset(hw - 0.1 - label.width, 0.5 - label.height));
+    const hw = ghostHalfWidth;
+    final square = RRect.fromRectAndRadius(
+      const Rect.fromLTRB(-hw, -hw, hw, hw),
+      const Radius.circular(0.1),
+    );
+
+    final Color body;
+    final Color ink;
+    if (typescript) {
+      body = flashWhite ? const Color(0xFFF2F4F8) : Logos.tsBlue;
+      ink = flashWhite ? Logos.tsBlue : const Color(0xFFFFFFFF);
+    } else {
+      body = Logos.jsYellow;
+      ink = Logos.jsInk;
+    }
+    _fill
+      ..shader = null
+      ..color = body;
+    canvas.drawRRect(square, _fill);
+
+    if (!typescript) {
+      // Each JS ghost keeps its arcade colour as a thin frame so the four
+      // personalities stay readable.
+      _stroke
+        ..color = Color(kind.color)
+        ..strokeWidth = 0.08;
+      canvas.drawRRect(square.deflate(0.04), _stroke);
     }
 
-    if (typescript && !eyesOnly) {
-      // Frightened face: small eyes and a squiggly mouth.
-      final face = flashWhite ? Palette.danger : const Color(0xFFFFD7C2);
-      _fill.color = face;
-      canvas.drawRect(const Rect.fromLTWH(-0.34, -0.5, 0.16, 0.16), _fill);
-      canvas.drawRect(const Rect.fromLTWH(0.18, -0.5, 0.16, 0.16), _fill);
-      _stroke
-        ..color = face
-        ..strokeWidth = 0.07;
-      _path.reset();
-      _path.moveTo(-0.5, -0.1);
-      for (var i = 0; i < 6; i++) {
-        _path.lineTo(-0.5 + (i + 0.5) * 0.17, i.isEven ? -0.2 : -0.1);
-      }
-      canvas.drawPath(_path, _stroke);
+    _drawLetters(canvas, typescript ? 'TS' : 'JS', ink);
+
+    if (typescript) {
+      _drawFrightenedFace(canvas, flashWhite);
     } else {
-      _drawEyes(canvas, dir);
+      _drawEyes(canvas, dir, small: true);
     }
     canvas.restore();
   }
 
-  void _buildGhostBody(double hw, bool wobble) {
-    // hw is the half width of the body.
-    const top = -0.78;
-    const skirt = 0.6;
-    const feet = 0.8;
-    _path
-      ..reset()
-      ..moveTo(-hw, skirt)
-      ..lineTo(-hw, top + hw)
-      ..arcToPoint(Offset(hw, top + hw), radius: Radius.circular(hw))
-      ..lineTo(hw, skirt);
-    // Wavy skirt with two animation frames.
-    const bumps = 4;
-    final step = (2 * hw) / bumps;
-    for (var i = 0; i < bumps; i++) {
-      final x0 = hw - i * step;
-      final mid = x0 - step / 2;
-      final x1 = x0 - step;
-      if (wobble) {
-        _path
-          ..lineTo(mid, feet)
-          ..lineTo(x1, skirt);
-      } else {
-        _path
-          ..lineTo(x0 - step * 0.25, feet)
-          ..lineTo(x0 - step * 0.75, feet)
-          ..lineTo(x1, skirt);
-      }
+  /// Logo lettering in the bottom-right corner, like the real JS/TS logos.
+  void _drawLetters(Canvas canvas, String letters, Color ink) {
+    const hw = ghostHalfWidth;
+    const cap = hw * 2 * 0.36; // cap height relative to the square
+    const width = (Logos.letterWidth * 2 + Logos.letterGap) * cap;
+    _letter
+      ..color = ink
+      ..strokeWidth = Logos.letterWeight;
+    canvas.save();
+    canvas.translate(hw * 0.86 - width, hw * 0.9 - cap);
+    canvas.scale(cap);
+    for (final ch in letters.split('')) {
+      canvas.drawPath(switch (ch) {
+        'J' => Logos.letterJ,
+        'T' => Logos.letterT,
+        _ => Logos.letterS,
+      }, _letter);
+      canvas.translate(Logos.letterWidth + Logos.letterGap, 0);
     }
-    _path.close();
+    canvas.restore();
   }
 
-  void _drawEyes(Canvas canvas, Direction dir) {
-    final look = Offset(dir.dx * 0.11, dir.dy * 0.12);
-    for (final side in const [-0.3, 0.3]) {
-      final centre = Offset(side, -0.22) + look * 0.5;
+  void _drawFrightenedFace(Canvas canvas, bool flashWhite) {
+    final face = flashWhite ? Palette.danger : const Color(0xFFFFD7C2);
+    _fill.color = face;
+    canvas.drawRect(const Rect.fromLTWH(-0.5, -0.5, 0.14, 0.14), _fill);
+    canvas.drawRect(const Rect.fromLTWH(-0.2, -0.5, 0.14, 0.14), _fill);
+    _stroke
+      ..color = face
+      ..strokeWidth = 0.06;
+    _path
+      ..reset()
+      ..moveTo(-0.56, -0.18);
+    for (var i = 0; i < 5; i++) {
+      _path.lineTo(-0.56 + (i + 1) * 0.1, i.isEven ? -0.26 : -0.18);
+    }
+    canvas.drawPath(_path, _stroke);
+  }
+
+  void _drawEyes(Canvas canvas, Direction dir, {bool small = false}) {
+    final k = small ? 0.72 : 1.0;
+    final look = Offset(dir.dx * 0.1, dir.dy * 0.1) * k;
+    final centres = small
+        ? const [Offset(-0.46, -0.32), Offset(-0.14, -0.32)]
+        : const [Offset(-0.3, -0.22), Offset(0.3, -0.22)];
+    for (final c in centres) {
+      final centre = c + look * 0.5;
       _fill.color = const Color(0xFFFFFFFF);
       canvas.drawOval(
-        Rect.fromCenter(center: centre, width: 0.4, height: 0.5),
+        Rect.fromCenter(center: centre, width: 0.4 * k, height: 0.5 * k),
         _fill,
       );
       _fill.color = const Color(0xFF1B3FA8);
-      canvas.drawCircle(centre + look, 0.12, _fill);
+      canvas.drawCircle(centre + look, 0.12 * k, _fill);
     }
   }
 }
