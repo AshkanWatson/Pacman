@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- PY-MAN app icon: Python chomping a semicolon. -->
+  <rect width="512" height="512" rx="0" fill="#05070D"/>
+  <g transform="translate(236 256)">
+    <clipPath id="top"><rect x="-200" y="-200" width="400" height="200"/></clipPath>
+    <path d="M0 0 L147 -85 A170 170 0 1 0 147 85 Z" fill="#FFD43B"/>
+    <path d="M0 0 L147 -85 A170 170 0 1 0 147 85 Z" fill="#4B8BBE" clip-path="url(#top)"/>
+    <line x1="-162" y1="0" x2="-8" y2="0" stroke="#00000055" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="20" cy="-88" r="28" fill="#fff"/>
+    <circle cx="29" cy="-88" r="14" fill="#0B1426"/>
+  </g>
+  <g fill="#E9E2CF">
+    <circle cx="410" cy="222" r="24"/>
+    <circle cx="410" cy="290" r="24"/>
+    <path d="M430 296 Q424 340 386 356 Q408 330 398 306 Z"/>
+  </g>
+</svg>
