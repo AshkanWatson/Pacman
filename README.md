@@ -5,10 +5,13 @@
 **PY-MAN** is an open-source arcade maze game for developers, built with Flutter.
 It plays like the 1980 arcade classic, with programming languages as the cast:
 
-- 🐍 **You are Python.** Python never needed semicolons, so you eat all of them.
-- 👻 **The ghosts are JavaScript**: `undefined`, `NaN`, `null` and `==`.
-- `{ }` **Power braces add types.** Eat one and every ghost compiles to
-  **TypeScript** for a few seconds. TypeScript ghosts are slow, blue and edible.
+- 🐍 **You are Python**, drawn as the Python logo with a chomping mouth.
+  Python never needed semicolons, so you eat all of them.
+- 👻 **The ghosts are JavaScript logos**: `undefined`, `NaN`, `null` and `==`,
+  each framed in its classic arcade colour.
+- `{ }` **Power braces add types.** Eat one and every JS logo flips into the
+  **TypeScript** logo for a few seconds. TypeScript ghosts are slow and edible,
+  and they flash just before flipping back to JavaScript.
 
 The ghost AI follows the original arcade rules (scatter/chase waves, per-ghost
 targeting, frightened wandering, tunnel slowdown, Cruise Elroy, ghost-house dot
@@ -22,7 +25,7 @@ counters), so it plays like a real arcade game rather than a mobile reskin.
 | --- | --- | --- |
 | ![Main menu](docs/screenshots/menu.png) | ![Gameplay on desktop](docs/screenshots/gameplay-desktop.png) | ![Gameplay on a phone](docs/screenshots/gameplay-phone.png) |
 
-| TypeScript mode (ghosts flashing as the power-up ends) | How to play |
+| TypeScript mode (after a power brace) | How to play |
 | --- | --- |
 | ![TypeScript mode](docs/screenshots/typescript-mode.png) | ![How to play](docs/screenshots/how-to-play.png) |
 
@@ -56,6 +59,20 @@ and save it as `docs/screenshots/gameplay.gif`._
   *Stack Overflow*, *Garbage Collector* and *Rubber Duck*.
 - Easter eggs: vim keys (`hjkl`), and the Konami code on the main menu.
 - Pause is a "BREAKPOINT"; game over is `Process finished with exit code 1`.
+
+**Logo character skins**
+- Python is the Python logo. The classic chomping mouth is cut out of the
+  logo in the direction of travel, and it collapses in the arcade death
+  animation.
+- Ghosts are JavaScript logos with arcade eyes that look where they're going,
+  a two-frame hover animation, and a thin frame in each ghost's classic
+  colour (red, pink, cyan, orange).
+- A power brace plays a card-flip transition that turns every JS logo into
+  the TypeScript logo. The logos flash white near the end, then flip back to
+  JavaScript. Eaten ghosts return home as eyes.
+- All logos are vector paths (no image assets or fonts), so they stay sharp
+  on every platform and screen size. Sprite sizes are fixed, so collision
+  boundaries don't depend on logo shape.
 
 **UI, audio and polish**
 - Minimal arcade UI: neon maze, attract-mode animation on the menu, pixel font.
@@ -279,11 +296,14 @@ The bundled *Press Start 2P* font is licensed under the SIL Open Font License
 - **Audio:** every sound effect and music loop is synthesised from code by
   `tool/generate_audio.dart`. There are no third-party samples.
 - **Graphics:** all sprites, the maze and the app icon are drawn in code or SVG
-  in this repository.
+  in this repository. The character skins are vector redraws of the Python,
+  JavaScript (community) and TypeScript logos (`lib/ui/render/logos.dart`).
 - **Gameplay research:** *The Pac-Man Dossier* by Jamey Pittman, the reference
   for the ghost behaviour, speeds and timings.
 - **Trademarks:** Pac-Man is a trademark of Bandai Namco Entertainment. Python
   is a trademark of the Python Software Foundation. JavaScript is a trademark
   of Oracle. TypeScript is a trademark of Microsoft. This is an unaffiliated,
-  non-commercial fan tribute that uses the names for parody. No official logos
-  are included.
+  non-commercial fan tribute. The language logos are used as character skins
+  for parody and remain the property of their owners. If you redistribute the
+  game, check each owner's logo usage guidelines (for example the
+  [PSF trademark policy](https://www.python.org/psf/trademarks/)).

@@ -329,7 +329,9 @@ class _AttractPainter extends CustomPainter {
             y,
             g,
             Direction.right,
-            typescript: true,
+            // JS -> TS card flip right after the power brace.
+            typescript: q >= 0.03,
+            scaleX: q < 0.06 ? (math.cos(q / 0.06 * math.pi)).abs() : 1,
             flashWhite: q > 0.7 && wobble,
             wobble: wobble,
           );
